@@ -1,0 +1,8 @@
+chat_model_name: deepseek-v4-flash
+embedding_model_name: embedding-3
+
+chat_api_key: DEEPSEEK_API_KEY
+embedding_api_key: ZHIPUAI_API_KEY
+
+chat_base_url: https://api.deepseek.com
+embedding_base_url: https://open.bigmodel.cn/api/paas/v4/
