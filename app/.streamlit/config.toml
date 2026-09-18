@@ -1,4 +1,0 @@
-[server]
-# Avoid triggering Transformers' lazy image imports during module scanning.
-# Restart Streamlit manually after changing Python source files.
-fileWatcherType = "none"

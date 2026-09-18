@@ -1,52 +1,16 @@
-# prompts
+# ai-agent
 
-# Models
+基于 Python 3.14 和 uv 的最小项目骨架，暂不声明第三方依赖。
 
-# History
+```powershell
+# 创建虚拟环境并同步依赖
+uv sync --locked
 
-# Index 管理和分析各类文档
+# 添加依赖
+uv add 包名
 
-# Chains 构建功能的执行链条
+# 运行脚本
+uv run python 脚本名.py
+```
 
-# Agent
-
-# 提示词优化
-
-- 详细的描述
-- 让模型充当某个角色
-- 使用分隔符标明输入的不同部分
-- 对任务指定目标
-- 提供案例
-
-# 提示词工程
-
-- zero shot
-- few shot
-
-# 三种提示词模板在集体环境中使用
-
-# LangChain 提示词模板：`format` 与 `invoke`
-
-- `format()` 面向字符串，`invoke()` 面向 LangChain 链
-
-# Rag
-
-- 检索 增强 生成
-- 在线 `->` 检索 `->` 相似度匹配 `->` 获取结果
-- 离线 `->` 索引 `->`  添加数据
-
-# Agent
-
-## 中间件
-- 日志记录、分析、调试
-- 转换提示词、工具选择
-- 重试、备用、提前终止等逻辑控制
-- 安全防护、个人身份检测等
-
-
-
-
-
-
-
-
+提交 `pyproject.toml` 和 `uv.lock`，不提交 `.venv`。
