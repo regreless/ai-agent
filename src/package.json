@@ -1,0 +1,10 @@
+{
+  "name": "ai-agent-python",
+  "private": true,
+  "scripts": {
+    "dev": "uv run python -X utf8 demo_skill.py",
+    "demo:basic": "uv run python -X utf8 demo_basic.py",
+    "demo:search": "uv run python -X utf8 demo_search.py",
+    "demo:multi": "uv run python -X utf8 demo_multi_agent.py"
+  }
+}
