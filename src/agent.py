@@ -11,11 +11,14 @@ from src.sandbox import SandboxConfig, create_sandbox
 from src.skill_loader import SKILLS_DIR, build_skills_prompt, load_skills
 
 # 外层围栏长度必须一致；文件内有代码块时，模型应使用四个反引号包裹文件。
-FILE_BLOCK = re.compile(r"^(`{3,})(?:filename:|file:)([^\r\n]+)\r?\n(.*?)^\1[ \t]*\r?$", re.MULTILINE | re.DOTALL)
+FILE_BLOCK = re.compile(
+    r"^(`{3,})(?:filename:|file:)([^\r\n]+)\r?\n(.*?)^\1[ \t]*\r?$",
+    re.MULTILINE | re.DOTALL,
+)
 
 
 @dataclass
-class AgentResult:
+class AgentResult: 
     content: str
     messages: list[dict[str, str]]
     files_written: list[str]
@@ -61,13 +64,15 @@ class DWAgent:
         """请求模型；流式模式逐段打印，完整接收后返回文本。"""
         request = Request(
             f"{self.config.base_url.rstrip('/')}/chat/completions",
-            data=json.dumps({
-                "model": self.config.model,
-                "messages": messages,
-                "temperature": self.temperature,
-                "max_tokens": self.max_tokens,
-                "stream": stream,
-            }).encode("utf-8"),
+            data=json.dumps(
+                {
+                    "model": self.config.model,
+                    "messages": messages,
+                    "temperature": self.temperature,
+                    "max_tokens": self.max_tokens,
+                    "stream": stream,
+                }
+            ).encode("utf-8"),
             headers={
                 "Authorization": f"Bearer {self.config.api_key.get_secret_value()}",
                 "Content-Type": "application/json",
@@ -117,7 +122,9 @@ class DWAgent:
         content = self._request(messages, stream)
         if not content.strip():
             raise ValueError("模型未返回有效文本")
-        self.conversation_history.extend([user_entry, {"role": "assistant", "content": content}])
+        self.conversation_history.extend(
+            [user_entry, {"role": "assistant", "content": content}]
+        )
         return self._result(content, self.process_file_operations(content))
 
     def _result(self, content: str, files_written: list[str]) -> AgentResult:

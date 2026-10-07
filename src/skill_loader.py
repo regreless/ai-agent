@@ -19,10 +19,7 @@ class Skill:
 
 
 def parse_skill_file(file_path: str | Path) -> Skill:
-    """读取单个技能文件，按 Markdown 标题解析并返回 Skill。
-
-    一级标题作为技能名，缺失时使用文件名；二级标题对应各章节，缺失章节为空字符串。
-    """
+    """按标题解析技能；缺失名称使用文件名，缺失章节使用空字符串。"""
     file_path = Path(file_path)
     raw = file_path.read_text(encoding="utf-8-sig")
     name_match = re.search(r"^# (.+)$", raw, re.MULTILINE)
@@ -44,10 +41,7 @@ def parse_skill_file(file_path: str | Path) -> Skill:
 
 
 def load_skills(skills_dir: str | Path = SKILLS_DIR) -> list[Skill]:
-    """扫描指定目录的 .skill.md 文件，按文件名排序后返回技能列表。
-
-    默认读取 src/.dw/skills，不递归扫描子目录；目录不存在或没有技能时返回空列表。
-    """
+    """按文件名排序加载目录下的技能，不递归；无文件时返回空列表。"""
     return [
         parse_skill_file(file_path)
         for file_path in sorted(Path(skills_dir).glob("*.skill.md"))
@@ -56,16 +50,16 @@ def load_skills(skills_dir: str | Path = SKILLS_DIR) -> list[Skill]:
 
 
 def build_skills_prompt(skills: list[Skill]) -> str:
-    """将技能列表拼成系统提示词，包含触发条件、执行步骤、示例和参考资料。
-
-    跳过空章节；没有技能时返回空字符串。技能选择及步骤执行由模型根据提示词完成。
-    """
+    """拼接技能提示词，跳过空章节；无技能时返回空字符串。"""
     if not skills:
         return ""
 
-    skill_blocks = []
+    sections = [
+        "## 专项技能\n"
+        "根据用户输入选择最匹配的技能，按照其执行步骤处理；没有匹配技能时正常回答。"
+    ]
     for skill in skills:
-        sections = [f"### {skill.name}"]
+        sections.append(f"### {skill.name}")
         for section_name, content in (
             ("触发条件", skill.description),
             ("执行步骤", skill.script),
@@ -74,10 +68,4 @@ def build_skills_prompt(skills: list[Skill]) -> str:
         ):
             if content:
                 sections.append(f"{section_name}：\n{content}")
-        skill_blocks.append("\n\n".join(sections))
-
-    return (
-        "## 专项技能\n"
-        "根据用户输入选择最匹配的技能，按照其执行步骤处理；没有匹配技能时正常回答。\n\n"
-        + "\n\n".join(skill_blocks)
-    )
+    return "\n\n".join(sections)

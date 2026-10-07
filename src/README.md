@@ -9,12 +9,14 @@ cd C:\AIApp\ai-agent\src
 npm run dev
 ```
 
-启动后加载全部技能，直接输入任意内容，由模型根据技能的触发条件选择，例如：
+`index.py` 对应 TS 的交互入口，启动后加载全部技能，直接输入任意内容，由模型根据技能的触发条件选择，例如：
 
 ```text
 你：举头望明月，低头思故乡
 你：帮我审查这段代码：const users = fetch('/api/users');
-你：给一个 FastAPI 待办事项服务写 README
+你：给一个 FastAPI 待办事项服务写 README，保存为 notes.md
+你：files
+你：clear
 你：exit
 ```
 
@@ -54,12 +56,12 @@ system_prompt = build_skills_prompt(skills)
 也可绕过 npm，在项目根目录直接启动交互脚本：
 
 ```powershell
-uv run python -X utf8 src/demo_skill.py
+uv run python -X utf8 src/index.py
 ```
 
-启动仅加载技能；输入非空内容后才请求 DeepSeek API。输入 `exit` 或按 Ctrl+C 退出；空输入跳过，请求失败后可继续输入。每条输入独立处理，暂不保存对话历史。没有匹配技能时正常回答。
+启动时加载技能并初始化沙箱；普通输入会请求 DeepSeek API，以流式输出回复。同一个 Agent 保留本次运行的对话历史。输入 `clear` 清空历史，`files` 查看 `src/output` 下的文件，`exit` 或 Ctrl+C 退出；空输入跳过，请求失败后可继续输入。历史不落盘，重新启动后清空。
 
-脚本不执行回复中的代码或文件操作。回复首行的技能名称是模型自述，需结合回复是否遵循技能步骤判断效果，并非程序记录的触发事件。
+开启 HITL 关键词检查，命中时等待 `y/yes` 确认。模型按 `filename:` 格式输出的文件会写入沙箱；代码内容不会执行。`clear` 只清空历史，不删除输出文件。搜索仍通过 `demo:search` 测试，交互入口尚未接入自主搜索。
 
 Agent 核心见第五步；FastAPI 尚未接入。
 
@@ -175,5 +177,5 @@ npm run demo:multi
 
 ## 后续迁移顺序
 
-1. 交互入口及 FastAPI 接口。
+1. FastAPI 接口。
 2. HTTP 人工审批和恢复。
