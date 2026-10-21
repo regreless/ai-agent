@@ -1,61 +1,94 @@
-AI Chat
-├── 最近对话缓存
-├── session 状态
-├── LLM 响应缓存
-└── 用户调用频率限制
+| 表名 | 作用 | 关键关联字段 |
+|---|---|---|
+| `tenants` | 租户，即企业或组织，作为资源隔离边界 | `id`、唯一的 `code` |
+| `users` | 用户账号，保存登录信息、启用状态、管理员标记 | `tenant_id` |
+| `roles` | 租户内的权限角色，权限列表存于 JSON 字段 `permissions` | `tenant_id` |
+| `user_roles` | 用户与角色的关联表，支持一个用户拥有多个角色 | `user_id`、`role_id` |
+| `model_providers` | 模型调用配置：提供方、模型名、接口地址、密钥引用及单价 | `tenant_id` |
+| `agents` | 智能体配置：提示词、模型、知识库、工具、MCP、模式和版本 | `model_provider_id`、三组资源 ID 数组 |
+| `knowledge_bases` | 知识库配置，组织文档并记录向量相关配置 | `tenant_id` |
+| `documents` | 上传文件的元数据：文件名、路径、类型、处理状态 | `kb_id`、`tenant_id` |
+| `document_chunks` | 文档切片正文、来源、Token 数及向量索引 ID | `document_id`、`kb_id`、`vector_id` |
+| `tool_definitions` | 工具定义：参数 schema、风险等级、审批标记、启用状态 | `tenant_id` |
+| `mcp_servers` | MCP 服务配置：启动命令、参数、工具名称列表 | `tenant_id` |
+| `conversations` | 会话容器，记录谁与哪个 Agent 对话 | `tenant_id`、`user_id`、`agent_id` |
+| `messages` | 会话中的逐条消息，保存角色和正文 | `conversation_id` |
+| `agent_runs` | Agent 每次执行的记录：状态、最终回答、总 Token 和费用 | `conversation_id`、`user_id`、`agent_id` |
+| `trace_spans` | 执行步骤日志，例如检索、工具调用、模型调用及耗时 | `run_id`、`trace_id`、`parent_span_id` |
+| `cost_records` | 调用用量与费用明细，支持按用户、Agent、模型统计 | `run_id`、`tenant_id`、`user_id`、`agent_id` |
+| `audit_logs` | 操作审计，记录操作者、动作、资源和细节 | `user_id`、`resource_type`、`resource_id` |
 
-RAG
-├── 检索结果缓存
-├── embedding 任务状态
-├── 文档解析进度
-└── query cache
 
-Agent
-├── Agent Run 状态
-├── 当前执行步骤
-├── Tool Call 锁
-├── 长任务进度
-└── 中间结果缓存
 
-平台能力
-├── API Key 缓存
-├── 登录态缓存
-├── 验证码缓存
-├── 分布式锁
-└── 计数器
+```mermaid
+%%{init: {
+  "layout": "elk",
+  "theme": "base",
+  "flowchart": {
+    "curve": "linear",
+    "nodeSpacing": 40,
+    "rankSpacing": 55,
+    "padding": 15
+  },
+  "themeVariables": {
+    "primaryColor": "#102a40",
+    "primaryTextColor": "#9cd1ff",
+    "primaryBorderColor": "#20394b",
+    "lineColor": "#687782",
+    "edgeLabelBackground": "#0d1117",
+    "fontSize": "12px"
+  }
+}}%%
 
-## 本地 Redis
+flowchart TB
+    model_providers["model_providers 模型配置"]
+    agents["agents 智能体"]
+    tenants["tenants 租户"]
+    users["users 用户"]
+    tenant_resources["租户资源：角色 / 模型 / Agent<br/>/ 知识库 / 工具 / MCP"]
+    roles["roles 角色"]
+    user_roles["user_roles 用户角色关联"]
 
-使用 Docker 官方镜像 `redis:8.10.2-alpine`，仅绑定本机 `127.0.0.1:6379`，本地开发不设密码。
-数据保存在 Docker 卷 `ai-agent_redis_data` 中，启用 AOF 持久化和容器自动重启。
+    tool_definitions["tool_definitions 工具"]
+    knowledge_bases["knowledge_bases 知识库"]
+    mcp_servers["mcp_servers MCP"]
+    documents["documents 文档"]
+    document_chunks["document_chunks 切片"]
 
-```powershell
-docker compose up -d --wait redis
-docker compose exec redis redis-cli ping
-docker compose stop redis
+    conversations["conversations 会话"]
+    agent_runs["agent_runs 单次执行"]
+    messages["messages 消息"]
+    trace_spans["trace_spans 步骤日志"]
+    cost_records["cost_records 费用明细"]
+
+    model_providers --> agents
+
+    tenants --> users
+    tenants --> tenant_resources
+    users --> conversations
+    users --> user_roles
+    roles --> user_roles
+
+    agents -. "JSON ID 数组，多对多" .-> tool_definitions
+    agents -. "JSON ID 数组，多对多" .-> knowledge_bases
+    agents -. "JSON ID 数组，多对多" .-> mcp_servers
+    agents --> conversations
+
+    knowledge_bases --> documents
+    documents --> document_chunks
+
+    conversations --> agent_runs
+    conversations --> messages
+    agent_runs --> trace_spans
+    agent_runs --> cost_records
+
+    classDef table fill:#102a40,stroke:#20394b,stroke-width:1px,color:#9cd1ff,rx:10,ry:10;
+    class model_providers,agents,tenants,users,tenant_resources,roles,user_roles,tool_definitions,knowledge_bases,mcp_servers,documents,document_chunks,conversations,agent_runs,messages,trace_spans,cost_records table;
+
+    linkStyle default stroke:#687782,stroke-width:1px;
 ```
 
-项目 `.env` 中配置 `REDIS_URL=redis://127.0.0.1:6379/0`。Python 连接示例：
 
-```python
-import os
 
-from dotenv import load_dotenv
-from redis import Redis
 
-load_dotenv()
-redis_client = Redis.from_url(os.environ["REDIS_URL"], decode_responses=True)
-print(redis_client.ping())
-```
 
-`docker compose down` 保留数据卷；不要使用 `down -v`，除非需要删除 Redis 数据。
-
-## Redis Insight
-
-```powershell
-docker compose up -d redis_insight
-```
-
-浏览器打开 http://localhost:5540，已预配置 `ai-agent` 连接，数据库索引为 `0`。
-Redis Insight 在 Docker 内通过 `redis:6379` 连接 Redis；桌面版则使用 `127.0.0.1:6379`，不填密码。
-连接配置保存在 `ai-agent_redis_insight_data` 数据卷中。

@@ -1,34 +1,52 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        env_file=".env", case_sensitive=False, extra="ignore"
-    )
-    app_name: str = "AI Agent Course API"
-    api_v1_prefix: str = "/api/v1"
-    app_api_key: str = "dev-api-key-123"
-    llm_provider: str = "mock"
-    default_model: str = "mock-chat"
-    supported_models: str = "mock-chat,deepseek-chat,qwen-plus,gpt-4o-mini"
-    database_url: str = "postgresql+psycopg://postgres@127.0.0.1:5432/postgres"
-    cache_backend: str = "memory"
-    deepseek_api_key: str = ""
+    app_name: str = "Enterprise AI Agent Platform Real"
+    app_env: str = "development"
+    app_debug: bool = True
+    app_secret_key: str = "change-me-please"
+    access_token_expire_minutes: int = 1440
+    backend_cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8501,http://127.0.0.1:8501"
+
+    database_url: str = "postgresql+asyncpg://agent_user:agent_password@localhost:5432/agent_db"
+    sync_database_url: str = "postgresql+psycopg://agent_user:agent_password@localhost:5432/agent_db"
+    redis_url: str = "redis://localhost:6379/0"
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_collection: str = "enterprise_agent_chunks"
+    vector_dim: int = 1024
+
+    llm_provider: str = "deepseek"
+    deepseek_api_key: str = os.getenv("DEEPSEEK_API_KEY", "")
     deepseek_base_url: str = "https://api.deepseek.com"
-    dashscope_api_key: str = ""
-    qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    openai_api_key: str = ""
-    openai_base_url: str = "https://api.openai.com/v1"
+    deepseek_model: str = "deepseek-flash"
+    deepseek_timeout_seconds: float = 30
+
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen3.5:0.8b"
+
+    embedding_provider: str = "zhipu"
+    qwen_embedding_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+    qwen_embedding_api_key: str = os.getenv("ZHIPUAI_API_KEY", "")
+    qwen_embedding_model: str = "embedding-3"
+    qwen_embedding_dim: int = 1024
+
+    upload_dir: str = "/src/uploads"
+    mcp_order_command: str = "python"
+    mcp_order_args: str = "/src/mcp_servers/order_server.py"
+
+    default_admin_email: str = "admin@example.com"
+    default_admin_password: str = "admin123456"
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @property
-    def supported_model_list(self):
-        return [x.strip() for x in self.supported_models.split(",") if x.strip()]
+    def cors_list(self) -> list[str]:
+        return [item.strip() for item in self.backend_cors_origins.split(',') if item.strip()]
 
 
 @lru_cache
-def get_settings():
+def get_settings() -> Settings:
     return Settings()
-
-
-settings = get_settings()
